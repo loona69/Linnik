@@ -6,7 +6,7 @@ import sys
 import sqlite3
 from datetime import datetime, timedelta
 from calculate import calculate_discount, calculate_products
-
+#мяу
 #для получения файлов .py, а также для запуска бд
 def get_script_directory():
     if getattr(sys, 'frozen', False):
