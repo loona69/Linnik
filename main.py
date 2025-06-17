@@ -6,7 +6,6 @@ import sys
 import sqlite3
 from datetime import datetime, timedelta
 from calculate import calculate_discount, calculate_products
-#мяу
 
 #для получения файлов .py, а также для запуска бд
 def get_script_directory():
@@ -945,10 +944,16 @@ class EmployeeDialog(tk.Toplevel):
 
 #Журнал доступа
 class AccessLogDialog(tk.Toplevel):
-    def __init__(self, parent, db_file):
+    def __init__(self, parent, db_file, main_app_ref):
+        """
+        :param parent: родительское окно
+        :param db_file: путь к файлу БД
+        :param main_app_ref: ссылка на главное приложение
+        """
         super().__init__(parent)
         self.parent = parent
         self.db_file = db_file
+        self.main_app = main_app_ref
         self.iconbitmap('logo.ico')
         self.configure(bg='#FFFFFF')
         self.title('Журнал доступа')
@@ -961,74 +966,201 @@ class AccessLogDialog(tk.Toplevel):
         frame = ttk.Frame(self, padding="10")
         frame.grid(row=0, column=0, sticky="nsew")
 
-        self.access_table = ttk.Treeview(frame, columns=("Сотрудник", "Дверь", "Время"), show="headings")
-        self.access_table.heading("Сотрудник", text="Сотрудник")
-        self.access_table.heading("Дверь", text="Дверь")
-        self.access_table.heading("Время", text="Время")
-        self.access_table.column("Сотрудник", width=200)
-        self.access_table.column("Дверь", width=100)
-        self.access_table.column("Время", width=200)
+        # Создаем таблицу с колонками
+        columns = ("ID", "Сотрудник", "Дверь", "Время")
+        self.access_table = ttk.Treeview(
+            frame,
+            columns=columns,
+            show="headings",
+            selectmode="browse"
+        )
+
+        # Настраиваем заголовки
+        for col in columns:
+            self.access_table.heading(col, text=col)
+            self.access_table.column(col, width=100)
+
         self.access_table.grid(row=0, column=0, sticky="nsew")
 
+        # Скроллбар
         scrollbar = ttk.Scrollbar(frame, orient="vertical", command=self.access_table.yview)
         self.access_table.configure(yscrollcommand=scrollbar.set)
         scrollbar.grid(row=0, column=1, sticky="ns")
 
-        ttk.Button(frame, text="Добавить запись", command=self.add_access_log).grid(row=1, column=0, pady=5)
-        ttk.Button(frame, text="Назад", command=self.destroy).grid(row=2, column=0, pady=5)
+        # Фрейм для кнопок
+        button_frame = ttk.Frame(frame)
+        button_frame.grid(row=1, column=0, pady=10, sticky='ew')
+        button_frame.columnconfigure(0, weight=1)
+        button_frame.columnconfigure(1, weight=1)
 
+        # Кнопки действий
+        ttk.Button(
+            button_frame,
+            text="Добавить запись",
+            command=self.add_access_log
+        ).grid(row=0, column=0, padx=5, sticky='ew')
+
+        ttk.Button(
+            button_frame,
+            text="Удалить запись",
+            command=self.delete_selected_log,
+            style="Danger.TButton"
+        ).grid(row=0, column=1, padx=5, sticky='ew')
+
+        # Кнопка закрытия
+        ttk.Button(
+            frame,
+            text="Назад",
+            command=self.close_dialog
+        ).grid(row=2, column=0, pady=5, sticky='ew')
+
+        # Настройка растягивания
         frame.columnconfigure(0, weight=1)
         frame.rowconfigure(0, weight=1)
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
 
+        # Стиль для кнопки удаления
+        style = ttk.Style()
+        style.configure("Danger.TButton", foreground="red")
+
+        # Загрузка данных
         self.load_access_logs()
 
-    # загрузка данных журнала доступа
+    def close_dialog(self):
+        """Закрывает диалог и обновляет главное окно"""
+        self.destroy()
+        self.main_app.load_access_logs()  # Обновляем главное окно
+
     def load_access_logs(self):
+        """Загружает данные журнала доступа из БД"""
         try:
             conn = sqlite3.connect(self.db_file)
             cursor = conn.cursor()
+
+            # Выбираем данные с JOIN для получения имени сотрудника
             cursor.execute('''
-                SELECT e.name, a.door_id, a.timestamp
-                FROM access_logs a
-                JOIN employees e ON a.employee_id = e.employee_id
-            ''')
+                           SELECT a.log_id,
+                                  e.name,
+                                  a.door_id,
+                                  a.timestamp
+                           FROM access_logs a
+                                    JOIN employees e ON a.employee_id = e.employee_id
+                           ORDER BY a.timestamp DESC
+                           ''')
+
             logs = cursor.fetchall()
             conn.close()
 
+            # Очищаем таблицу перед загрузкой новых данных
             for item in self.access_table.get_children():
                 self.access_table.delete(item)
 
+            # Заполняем таблицу данными
             for log in logs:
                 self.access_table.insert("", "end", values=log)
-        except sqlite3.Error as e:
-            messagebox.showerror("Ошибка", f"Не удалось загрузить журнал доступа: {str(e)}", parent=self)
 
-    def add_access_log(self):
+        except sqlite3.Error as e:
+            messagebox.showerror(
+                "Ошибка базы данных",
+                f"Не удалось загрузить журнал доступа:\n{str(e)}",
+                parent=self
+            )
+
+    def delete_selected_log(self):
+        """Удаляет выбранную запись из журнала"""
+        selected_item = self.access_table.selection()
+
+        if not selected_item:
+            messagebox.showwarning(
+                "Выбор записи",
+                "Пожалуйста, выберите запись для удаления",
+                parent=self
+            )
+            return
+
+        # Получаем ID записи
+        log_id = self.access_table.item(selected_item, "values")[0]
+
+        # Подтверждение удаления
+        if not messagebox.askyesno(
+                "Подтверждение удаления",
+                "Вы уверены, что хотите удалить эту запись?",
+                parent=self
+        ):
+            return
+
         try:
             conn = sqlite3.connect(self.db_file)
             cursor = conn.cursor()
-            cursor.execute("SELECT employee_id, name FROM employees")
-            employees = cursor.fetchall()
-            if not employees:
-                messagebox.showwarning("Предупреждение", "Нет зарегистрированных сотрудников.", parent=self)
-                conn.close()
+
+            # Выполняем удаление
+            cursor.execute("DELETE FROM access_logs WHERE log_id = ?", (log_id,))
+            conn.commit()
+            conn.close()
+
+            # Обновляем таблицу в диалоге
+            self.load_access_logs()
+
+            # Обновляем главное окно
+            self.main_app.load_access_logs()
+
+            messagebox.showinfo(
+                "Успешное удаление",
+                "Запись успешно удалена из журнала",
+                parent=self
+            )
+
+        except sqlite3.Error as e:
+            messagebox.showerror(
+                "Ошибка удаления",
+                f"Не удалось удалить запись:\n{str(e)}",
+                parent=self
+            )
+
+    def add_access_log(self):
+        """Добавляет тестовую запись доступа"""
+        try:
+            conn = sqlite3.connect(self.db_file)
+            cursor = conn.cursor()
+
+            # Получаем первого сотрудника
+            cursor.execute("SELECT employee_id FROM employees LIMIT 1")
+            employee = cursor.fetchone()
+
+            if not employee:
+                messagebox.showwarning(
+                    "Нет сотрудников",
+                    "В системе нет зарегистрированных сотрудников",
+                    parent=self
+                )
                 return
 
-            employee_id = employees[0][0]
+            employee_id = employee[0]
             door_id = 1
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+            # Вставляем новую запись
             cursor.execute('''
-                INSERT INTO access_logs (employee_id, door_id, timestamp)
-                VALUES (?, ?, ?)
-            ''', (employee_id, door_id, timestamp))
+                           INSERT INTO access_logs (employee_id, door_id, timestamp)
+                           VALUES (?, ?, ?)
+                           ''', (employee_id, door_id, timestamp))
+
             conn.commit()
             conn.close()
+
+            # Обновляем таблицу в диалоге
             self.load_access_logs()
+
+            # Обновляем главное окно
+            self.main_app.load_access_logs()
+
         except sqlite3.Error as e:
-            messagebox.showerror("Ошибка", f"Ошибка добавления записи доступа: {str(e)}", parent=self)
+            messagebox.showerror(
+                "Ошибка добавления",
+                f"Не удалось добавить запись:\n{str(e)}",
+                parent=self
+            )
 
 #основное окно
 class MainWindow(tk.Tk):
@@ -1196,27 +1328,164 @@ class MainWindow(tk.Tk):
         frame = ttk.Frame(self.employees_frame, padding="10")
         frame.grid(row=0, column=0, sticky="nsew")
 
-        self.employees_table = ttk.Treeview(frame, columns=("ID", "ФИО", "Дата рождения", "Паспорт", "Банк", "Семья", "Здоровье"), show="headings")
+        # Создание таблицы сотрудников
+        self.employees_table = ttk.Treeview(
+            frame,
+            columns=("ID", "ФИО", "Дата рождения", "Паспорт", "Банк", "Семья", "Здоровье"),
+            show="headings",
+            selectmode="browse"
+        )
+
         headers = ["ID", "ФИО", "Дата рождения", "Паспорт", "Банк", "Семья", "Здоровье"]
         for header in headers:
             self.employees_table.heading(header, text=header)
-            self.employees_table.column(header, width=100)
+            self.employees_table.column(header, width=100, anchor="w")
+
         self.employees_table.grid(row=0, column=0, sticky="nsew")
 
         scrollbar = ttk.Scrollbar(frame, orient="vertical", command=self.employees_table.yview)
         self.employees_table.configure(yscrollcommand=scrollbar.set)
         scrollbar.grid(row=0, column=1, sticky="ns")
 
+        # Фрейм для кнопок управления
         button_frame = ttk.Frame(frame)
         button_frame.grid(row=1, column=0, columnspan=2, pady=10)
-        ttk.Button(button_frame, text="Добавить сотрудника", command=self.add_employee).grid(row=0, column=0, padx=5)
 
+        ttk.Button(
+            button_frame,
+            text="Добавить сотрудника",
+            command=self.add_employee
+        ).grid(row=0, column=0, padx=5)
+
+        # Кнопка для удаления сотрудника
+        ttk.Button(
+            button_frame,
+            text="Удалить сотрудника",
+            command=self.delete_employee,
+            style="Danger.TButton"
+        ).grid(row=0, column=1, padx=5)
+
+        # Настройка адаптивности
         frame.columnconfigure(0, weight=1)
         frame.rowconfigure(0, weight=1)
         self.employees_frame.columnconfigure(0, weight=1)
         self.employees_frame.rowconfigure(0, weight=1)
 
+        # Загрузка данных
         self.load_employees()
+
+    def delete_employee(self):
+        """Удаляет выбранного сотрудника с подтверждением"""
+        selected = self.employees_table.selection()
+
+        if not selected:
+            messagebox.showwarning("Ошибка", "Выберите сотрудника для удаления")
+            return
+
+        # Получаем ID выбранного сотрудника
+        item = self.employees_table.item(selected[0])
+        emp_id = item['values'][0]
+        emp_name = item['values'][1]
+
+        # Запрос подтверждения
+        confirm = messagebox.askyesno(
+            "Подтверждение удаления",
+            f"Вы уверены, что хотите удалить сотрудника?\n{emp_name} (ID: {emp_id})",
+            icon="warning"
+        )
+
+        if not confirm:
+            return
+
+        try:
+            # Подключение к вашей БД
+            conn = sqlite3.connect(self.db_file)
+            cursor = conn.cursor()
+
+            # Включаем проверку внешних ключей
+            cursor.execute("PRAGMA foreign_keys = ON")
+
+            # Пытаемся удалить сотрудника
+            cursor.execute("DELETE FROM employees WHERE employee_id = ?", (emp_id,))
+
+            if cursor.rowcount == 0:
+                messagebox.showerror("Ошибка", "Сотрудник не найден в базе данных")
+            else:
+                conn.commit()
+                messagebox.showinfo("Успех", "Сотрудник успешно удален")
+
+            # Обновляем таблицу независимо от результата
+            self.load_employees()
+
+        except sqlite3.IntegrityError as e:
+            # Обработка ошибки связанных данных
+            messagebox.showerror(
+                "Ошибка удаления",
+                "Невозможно удалить сотрудника:\n"
+                "Существуют связанные записи в других таблицах\n\n"
+                f"Детали: {str(e)}"
+            )
+        except sqlite3.OperationalError as e:
+            # Обработка других ошибок БД
+            messagebox.showerror("Ошибка БД", f"Ошибка при работе с базой данных: {str(e)}")
+        except Exception as e:
+            messagebox.showerror("Ошибка", f"Произошла непредвиденная ошибка: {str(e)}")
+        finally:
+            try:
+                if conn:
+                    conn.close()
+            except:
+                pass
+
+    def load_employees(self):
+        """Загружает сотрудников из базы данных в таблицу"""
+        # Очистка существующих данных
+        for row in self.employees_table.get_children():
+            self.employees_table.delete(row)
+
+        conn = None
+        try:
+            # Подключение к вашей БД
+            conn = sqlite3.connect(self.db_file)
+            cursor = conn.cursor()
+
+            # Получаем данные сотрудников
+            cursor.execute("""
+                           SELECT employee_id,
+                                  name,
+                                  birth_date,
+                                  passport,
+                                  bank_details,
+                                  family_status,
+                                  health_status
+                           FROM employees
+                           ORDER BY employee_id
+                           """)
+
+            # Вставляем данные в таблицу
+            for row in cursor.fetchall():
+                # Заменяем None на пустую строку для отображения
+                formatted_row = [str(value) if value is not None else "" for value in row]
+                self.employees_table.insert("", "end", values=formatted_row)
+
+        except sqlite3.OperationalError as e:
+            # Обработка ошибки отсутствия таблицы
+            if "no such table" in str(e):
+                messagebox.showerror(
+                    "Ошибка таблицы",
+                    "Таблица сотрудников не найдена в базе данных.\n"
+                    "Убедитесь, что таблица 'employees' существует."
+                )
+            else:
+                messagebox.showerror("Ошибка загрузки", f"Ошибка при загрузке сотрудников: {str(e)}")
+        except Exception as e:
+            messagebox.showerror("Ошибка", f"Ошибка: {str(e)}")
+        finally:
+            try:
+                if conn:
+                    conn.close()
+            except:
+                pass
 
     def init_access_tab(self):
         frame = ttk.Frame(self.access_frame, padding="10")
@@ -1243,6 +1512,46 @@ class MainWindow(tk.Tk):
         self.access_frame.rowconfigure(0, weight=1)
 
         self.load_access_logs()
+
+    def view_access_log(self):
+        """Открывает диалоговое окно журнала доступа"""
+        # Исправленный вызов с передачей всех необходимых параметров
+        AccessLogDialog(self, self.db_file, self)  # Добавлен третий аргумент - ссылка на главное приложение
+
+    def load_access_logs(self):
+        """Загружает данные журнала доступа в главное окно"""
+        try:
+            conn = sqlite3.connect(self.db_file)
+            cursor = conn.cursor()
+
+            # Выбираем данные
+            cursor.execute('''
+                           SELECT a.log_id,
+                                  e.name,
+                                  a.door_id,
+                                  a.timestamp
+                           FROM access_logs a
+                                    JOIN employees e ON a.employee_id = e.employee_id
+                           ORDER BY a.timestamp DESC
+                           ''')
+
+            logs = cursor.fetchall()
+            conn.close()
+
+            # Очищаем таблицу
+            for item in self.access_table.get_children():
+                self.access_table.delete(item)
+
+            # Заполняем данными
+            for log in logs:
+                self.access_table.insert("", "end", values=log)
+
+        except sqlite3.Error as e:
+            messagebox.showerror(
+                "Ошибка базы данных",
+                f"Не удалось загрузить журнал доступа:\n{str(e)}",
+                parent=self
+            )
 
     def load_partners(self):
         try:
@@ -1508,7 +1817,7 @@ class MainWindow(tk.Tk):
         EmployeeDialog(self, self.db_file)
 
     def view_access_log(self):
-        AccessLogDialog(self, self.db_file)
+        AccessLogDialog(self, self.db_file, self)
 
     def test_material_calculation(self):
         try:

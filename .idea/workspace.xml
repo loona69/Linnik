@@ -4,7 +4,16 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="fc49924c-314a-47a5-8b22-cc605d28f021" name="Changes" comment="fiuuii" />
+    <list default="true" id="fc49924c-314a-47a5-8b22-cc605d28f021" name="Changes" comment="fiuuii">
+      <change beforePath="$PROJECT_DIR$/.idea/Linnik.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/Linnik.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/db.db" beforeDir="false" afterPath="$PROJECT_DIR$/db.db" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/materials.csv" beforeDir="false" afterPath="$PROJECT_DIR$/materials.csv" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/products.csv" beforeDir="false" afterPath="$PROJECT_DIR$/products.csv" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -28,7 +37,7 @@
   <component name="GithubPullRequestsUISettings">{
   &quot;selectedUrlAndAccountId&quot;: {
     &quot;url&quot;: &quot;https://github.com/loona69/Linnik.git&quot;,
-    &quot;accountId&quot;: &quot;c7287ee5-bfc7-48e7-ac45-88406af15539&quot;
+    &quot;accountId&quot;: &quot;79e14c42-0ffe-4de6-a2e4-13fa6f6e0e92&quot;
   }
 }</component>
   <component name="ProjectColorInfo">{
@@ -46,6 +55,7 @@
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
@@ -62,8 +72,8 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-js-predefined-d6986cc7102b-b26f3e71634d-JavaScript-PY-251.26094.141" />
-        <option value="bundled-python-sdk-9f8e2b94138c-36ea0e71a18c-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-251.26094.141" />
+        <option value="bundled-js-predefined-d6986cc7102b-6a121458b545-JavaScript-PY-251.25410.159" />
+        <option value="bundled-python-sdk-e0ed3721d81e-36ea0e71a18c-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-251.25410.159" />
       </set>
     </attachedChunks>
   </component>
@@ -77,6 +87,13 @@
       <workItem from="1750151255508" duration="1013000" />
       <workItem from="1750153132877" duration="443000" />
       <workItem from="1750153586585" duration="660000" />
+      <workItem from="1750161063661" duration="5638000" />
+      <workItem from="1750166763912" duration="375000" />
+      <workItem from="1750167161061" duration="694000" />
+      <workItem from="1750167890228" duration="540000" />
+      <workItem from="1750168684008" duration="196000" />
+      <workItem from="1750168911166" duration="141000" />
+      <workItem from="1750169074672" duration="309000" />
     </task>
     <task id="LOCAL-00001" summary="added">
       <option name="closed" value="true" />
@@ -173,6 +190,6 @@
     <option name="LAST_COMMIT_MESSAGE" value="fiuuii" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/Linnik$main.coverage" NAME="main Coverage Results" MODIFIED="1750151289729" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/Linnik$main.coverage" NAME="main Coverage Results" MODIFIED="1750169023178" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>
